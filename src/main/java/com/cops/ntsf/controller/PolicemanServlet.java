@@ -2,6 +2,7 @@ package com.cops.ntsf.controller;
 
 import com.cops.ntsf.model.Complaint;
 import com.cops.ntsf.model.Policeman;
+import com.cops.ntsf.service.Email;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -64,6 +65,8 @@ public class PolicemanServlet extends HttpServlet {
                 System.out.println("Authorized Position: " + authorizedPosition);
 
                 if (authorizedRank.equals("policeman")) {
+                    viewProfile(request, response);
+                    viewProfilePictureInDashboard(request, response);
                     if (authorizedPosition.equals("trafficPolice")) {
                         if (action.equals("addFine")) {
 //                            new FineServlet().addFine(request, response);
@@ -74,7 +77,11 @@ public class PolicemanServlet extends HttpServlet {
                         if (action.equals("viewAppealsAsInvestigationOfficer")) {
 //                            new ComplaintServlet().viewComplaintsAsInvestigationOfficer(request, response);
                             viewAppealsAsInvestigationOfficer(request, response);
-                        } else {
+                        } else if(action.equals("rejectAppeal"))
+                        {
+                            rejectAppeal(request, response);
+                        } else
+                        {
                             System.out.println("You are not authorized to access this page. Only investigationOfficer are allowed to access this page");
                         }
                     } else if (authorizedPosition.equals("courtSeargent")) {
@@ -107,6 +114,38 @@ public class PolicemanServlet extends HttpServlet {
         }
         else {
             System.out.println("JWT signature verification failed");
+        }
+    }
+
+    private void rejectAppeal(HttpServletRequest request, HttpServletResponse response) {
+        try{
+            PrintWriter out = response.getWriter();
+            response.setContentType("application/json");
+
+            System.out.println("Came until the rejectAppeal method in Policeman Servlet");
+            String complaint_no = request.getParameter("complaint_no");
+            System.out.println("Complaint No: " + complaint_no);
+
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("serverResponse", "Allowed");
+
+            Complaint complaint = new Complaint();
+            boolean rejectAppealAlert =  complaint.rejectAppealAsInvestigationOfficer(complaint_no);
+
+            if (rejectAppealAlert == true){
+            //    Email email = new Email();
+            //    email.sendEmail("Appeal Rejected", "Your appeal has been rejected", complaint.getAppealEmail(complaint_no));
+                System.out.println("Appeal Rejected Successfully");
+            } else {
+                System.out.println("Appeal Rejected Failed");
+            }
+
+            jsonObject.put("alert", rejectAppealAlert);
+            out.write(jsonObject.toString());
+            out.close();
+
+        } catch (Exception e){
+            e.printStackTrace();
         }
     }
 
